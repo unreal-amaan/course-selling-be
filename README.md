@@ -1,1 +1,1 @@
-# course-selling-be
+This is my repo for the backend of a course selling website
