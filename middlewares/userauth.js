@@ -1,10 +1,10 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_USER_SECRET = process.env.JWT_USER_SECRET;
 
 function userauth(req, res, next) {
     const token = req.headers.token;
-    const decode = jwt.verify(token, JWT_SECRET);
+    const decode = jwt.verify(token, JWT_USER_SECRET);
     if (decode) {
         req.id = decode.id;
         console.log("User Authentication Successful !");

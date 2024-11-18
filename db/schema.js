@@ -18,11 +18,11 @@ const admin = new Schema({
 
 
 const course = new Schema({
-    createrId : ObjectId,
-    title : String,
+    title : {type : String , unique : true},
     price : Number,
     description : String,
-    imageUrl : String
+    imageUrl : String,
+    creatorId : ObjectId
 })
 
 const purchase = new Schema({
