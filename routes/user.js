@@ -1,13 +1,15 @@
 const express = require("express");
 const userroutes = express.Router();
 
-const {z} = require("zod")
-const validator = require("validator")
-const bcrypt = require('bcrypt');
+const { z } = require("zod");
+const validator = require("validator");
+const bcrypt = require("bcrypt");
 
+const { userauth } = require("../middlewares/userauth");
 const jwt = require("jsonwebtoken");
 const { UserModel } = require("../db/schema");
 const { CourseModel } = require("../db/schema");
+const { PurchaseModel } = require("../db/schema");
 
 require("dotenv").config();
 const JWT_USER_SECRET = process.env.JWT_USER_SECRET;
@@ -96,7 +98,54 @@ userroutes.post("/signin", async function (req, res) {
     });
 });
 
-userroutes.get("/my-courses", function (req, res) {});
+userroutes.use(userauth);
+
+userroutes.post("/purchase", async function (req, res) {
+    const { courseId, userId } = req.body;
+
+    await CourseModel.findOne({
+        _id: courseId,
+    })
+        .then(async () => {
+            await PurchaseModel.create({
+                courseId,
+                userId,
+            });
+            res.json({
+                message: "Purchase Successful",
+            });
+        })
+        .catch(() => {
+            res.json({
+                message: "Purchase Failed",
+            });
+        });
+});
+
+userroutes.get("/my-courses", async function (req, res) {
+    const { userId } = req.body;
+
+    await UserModel.findOne({
+        _id: userId,
+    })
+        .then(async () => {
+            const find = await PurchaseModel.findOne({
+                userId: userId,
+            });
+            const my_courses = await CourseModel.find({
+                _id: find.courseId,
+            });
+            res.json({
+                message: "successfully fetched your courses",
+                my_courses: my_courses,
+            });
+        })
+        .catch(() => {
+            res.json({
+                message: "Error fetching user",
+            });
+        });
+});
 
 module.exports = {
     userroutes: userroutes,

@@ -10,7 +10,7 @@ const DB_CONNECTION_STRING = process.env.DB_CONNECTION_STRING
 app.use(express.json())
 app.use("/user" , userroutes)
 app.use("/admin" , adminroutes)
-app.use("/course" , courseroutes)
+app.use("/" , courseroutes)
 
 
 async function main() {
