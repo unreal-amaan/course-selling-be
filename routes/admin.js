@@ -170,7 +170,8 @@ adminroutes.get("/get-all-courses", async function (req, res) {
         })
         res.json({
             message : "All the courses created by admin are fetched",
-            courses : my_created_courses
+            courses : my_created_courses.map((course) => course.title)
+            // courses : my_created_courses.map((course) => course.title)
         })
     }catch (err) {
         res.json({
