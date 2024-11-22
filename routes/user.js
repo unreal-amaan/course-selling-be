@@ -5,8 +5,8 @@ const { z } = require("zod");
 const validator = require("validator");
 const bcrypt = require("bcrypt");
 
-const { userauth } = require("../middlewares/userauth");
 const jwt = require("jsonwebtoken");
+const { userauth } = require("../middlewares/userauth");
 const { UserModel } = require("../db/schema");
 const { CourseModel } = require("../db/schema");
 const { PurchaseModel } = require("../db/schema");
@@ -88,7 +88,7 @@ userroutes.post("/signin", async function (req, res) {
 
     const token = jwt.sign(
         {
-            id: user._id.toString(),
+            id: user._id,
         },
         JWT_USER_SECRET
     );
@@ -100,51 +100,43 @@ userroutes.post("/signin", async function (req, res) {
 
 userroutes.use(userauth);
 
-userroutes.post("/purchase", async function (req, res) {
-    const { courseId, userId } = req.body;
-
-    await CourseModel.findOne({
-        _id: courseId,
-    })
-        .then(async () => {
-            await PurchaseModel.create({
-                courseId,
-                userId,
-            });
-            res.json({
-                message: "Purchase Successful",
-            });
+userroutes.post("/purchases" , async (req,res) => {
+    const userId = req.userid
+    const courseId = req.body.courseId
+    try {
+        await PurchaseModel.create({
+            courseId,
+            userId
         })
-        .catch(() => {
-            res.json({
-                message: "Purchase Failed",
-            });
-        });
-});
+        res.json({
+            message : "Course Purchased Successfully"
+        })
+    }catch{
+        res.json({
+            message : "Course purchase failed"
+        })
+    }
+})
+
 
 userroutes.get("/my-courses", async function (req, res) {
-    const { userId } = req.body;
-
-    await UserModel.findOne({
-        _id: userId,
-    })
-        .then(async () => {
-            const find = await PurchaseModel.findOne({
-                userId: userId,
-            });
-            const my_courses = await CourseModel.find({
-                _id: find.courseId,
-            });
-            res.json({
-                message: "successfully fetched your courses",
-                my_courses: my_courses,
-            });
-        })
-        .catch(() => {
-            res.json({
-                message: "Error fetching user",
-            });
+    const userId = req.userid;
+    const purchases = await PurchaseModel.find({
+        userId: userId,
+    });
+    const courseIds = purchases.map((purchase) => purchase.courseId);
+    const my_courses = await CourseModel.find({
+        _id: courseIds,
+    });
+    if (my_courses.length === 0) {
+        return res.json({
+            message: "You have not purchased any course",
         });
+    }
+    res.json({
+        message: "successfully fetched your courses",
+        my_courses: my_courses,
+    });
 });
 
 module.exports = {

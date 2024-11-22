@@ -16,7 +16,6 @@ const admin = new Schema({
     lastname : String
 })
 
-
 const course = new Schema({
     title : {type : String , unique : true},
     price : Number,

@@ -101,20 +101,30 @@ adminroutes.post("/signin", async function (req, res) {
 adminroutes.use(adminauth);
 
 adminroutes.post("/create-course", async function (req, res) {
-    const { title, price, description, imageurl, adminid } = req.body;
-
+    const { title, price, description, imageurl } = req.body;
+    const adminid = req.adminid;
     try {
-        const course = await CourseModel.create({
-            title,
-            price,
-            description,
-            imageUrl: imageurl,
-            creatorId: adminid,
+        const admin = await AdminModel.findOne({
+            _id: adminid,
         });
-        res.json({
-            message: "Course Created Successfully ",
-            courseId: course._id,
-        });
+
+        if (admin) {
+            const course = await CourseModel.create({
+                title,
+                price,
+                description,
+                imageUrl: imageurl,
+                creatorId: adminid,
+            });
+            res.json({
+                message: "Course Created Successfully ",
+                courseId: course._id,
+            });
+        } else {
+            res.json({
+                message: "Admin id is incorrect",
+            });
+        }
     } catch (err) {
         res.json({
             message: "Course Creation Failed ",
@@ -124,12 +134,21 @@ adminroutes.post("/create-course", async function (req, res) {
 
 adminroutes.put("/delete-course", async function (req, res) {
     const { courseId } = req.body;
+    const adminid = req.adminid;
     try {
         await CourseModel.deleteOne({
             _id: courseId,
-        });
-        res.json({
-            message: "Course deletion successful",
+            creatorId: adminid,
+        }).then((result) => {
+            if (result.deletedCount === 0) {
+                res.json({
+                    message: "Course not found",
+                });
+            } else {
+                res.json({
+                    message: "Course deletion successful",
+                });
+            }
         });
     } catch {
         res.json({
@@ -140,10 +159,12 @@ adminroutes.put("/delete-course", async function (req, res) {
 
 adminroutes.put("/update-course", async function (req, res) {
     const { title, price, description, imageurl, courseId } = req.body;
+    const adminId = req.adminid;
     try {
         await CourseModel.updateOne(
             {
                 _id: courseId,
+                creatorId: adminId,
             },
             {
                 title,
@@ -151,32 +172,46 @@ adminroutes.put("/update-course", async function (req, res) {
                 description,
                 imageUrl: imageurl,
             }
-        );
-        res.json({
-            message: "Course updation successful",
-        });
-    } catch(err) {
+        )
+            .then((result) => {
+                if (result.matchedCount === 0) {
+                    res.json({
+                        message: "Course not found",
+                    });
+                } else {
+                    res.json({
+                        message: "course updation successful",
+                    });
+                }
+            })
+            .catch(() => {
+                res.json({
+                    message: "course updation failed",
+                });
+            });
+    } catch (err) {
         console.log(err);
         res.json({
             message: "Error updating the course",
         });
     }
 });
+
 adminroutes.get("/get-all-courses", async function (req, res) {
-    const {adminid} = req.body;
+    const adminid = req.adminid;
     try {
         const my_created_courses = await CourseModel.find({
-            creatorId : adminid
-        })
+            creatorId: adminid,
+        });
         res.json({
-            message : "All the courses created by admin are fetched",
-            courses : my_created_courses.map((course) => course.title)
+            message: "All the courses created by admin are fetched",
+            courses: my_created_courses,
             // courses : my_created_courses.map((course) => course.title)
-        })
-    }catch (err) {
+        });
+    } catch (err) {
         res.json({
-            message : "error fetching courses"
-        })
+            message: "error fetching courses",
+        });
     }
 });
 
