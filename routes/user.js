@@ -100,24 +100,28 @@ userroutes.post("/signin", async function (req, res) {
 
 userroutes.use(userauth);
 
-userroutes.post("/purchases" , async (req,res) => {
-    const userId = req.userid
-    const courseId = req.body.courseId
-    try {
-        await PurchaseModel.create({
-            courseId,
-            userId
-        })
-        res.json({
-            message : "Course Purchased Successfully"
-        })
-    }catch{
-        res.json({
-            message : "Course purchase failed"
-        })
-    }
-})
+userroutes.post("/purchased", async (req, res) => {
+    const userId = req.userid;
 
+    try {
+        const purchases = await PurchaseModel.find({
+            userId,
+        })
+            .select("title price description imageUrl -_id")
+            .lean();
+
+        if (purchases.length == 0) {
+            res.json({
+                message: "No purchased courses",
+            });
+        } else {
+            res.json({
+                message: "Purchased courses fetched successfully",
+                PurchasedCourses: purchases,
+            });
+        }
+    } catch {}
+});
 
 userroutes.get("/my-courses", async function (req, res) {
     const userId = req.userid;
